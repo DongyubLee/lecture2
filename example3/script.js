@@ -7,6 +7,10 @@ let camera, scene, raycaster, renderer
 const mouse = new THREE.Vector2()
 window.addEventListener( 'click', onClick, false);
 
+var theCountX = 0
+var theCountY = 0
+var globalScore = 10
+
 init()
 animate()
 
@@ -18,33 +22,52 @@ function init() {
     scene = new THREE.Scene()
     scene.background = new THREE.Color(1,1,1)
     camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 )
-    camera.position.y = - 100
+    //camera.position.y = - 100
+    camera.position.z = 100
 
     // create the renderer and add it to the html
     renderer = new THREE.WebGLRenderer( { antialias: true } )
     renderer.setSize( window.innerWidth, window.innerHeight )
     document.body.appendChild( renderer.domElement )
 
-    const controls = new OrbitControls( camera, renderer.domElement )
+    //const controls = new OrbitControls( camera, renderer.domElement )
 
     const directionalLight = new THREE.DirectionalLight( 0xffffff )
-    directionalLight.position.set( 0, 0, 2 )
+    directionalLight.position.set( 1, 1, 1 )
     directionalLight.castShadow = true
     directionalLight.intensity = 2
+
+    const directionalLight2 = new THREE.DirectionalLight( 0xffffff )
+    directionalLight2.position.set( -1, -1, -1 )
+    directionalLight2.castShadow = true
+    directionalLight2.intensity = 2
+
     scene.add( directionalLight )
+    scene.add( directionalLight2 )
 
     raycaster = new THREE.Raycaster()
 
     const loader = new Rhino3dmLoader()
     loader.setLibraryPath( 'https://cdn.jsdelivr.net/npm/rhino3dm@0.13.0/' )
 
-    loader.load( 'sphere.3dm', function ( object ) {
+    //loader.load( 'sphere.3dm', function ( object ) {
+    loader.load( 'DongyubLee.3dm', function ( object ) {
 
         document.getElementById('loader').remove()
         scene.add( object )
         console.log( object )
 
     } )
+
+    let container = document.getElementById( 'container' )
+    container = document.createElement( 'div' )
+    container.id = 'container'
+    const table = document.createElement( 'table' )
+    container.appendChild( table )
+    const row = document.createElement( 'tr' )
+    row.innerHTML = `<td>Hit the ball!</td>`
+    table.appendChild( row )
+    document.body.appendChild( container )
 
 }
 
@@ -79,19 +102,26 @@ function onClick( event ) {
         const object = intersects[0].object
         console.log(object) // debug
 
-        object.material.color.set( 'yellow' )
+        //object.material.color.set( 'red' )
 
         // get user strings
         let data, count
         if (object.userData.attributes !== undefined) {
             data = object.userData.attributes.userStrings
+            object.material.color.set( 'red' )
+            globalScore += Number(data[0][1])
         } else {
             // breps store user strings differently...
             data = object.parent.userData.attributes.userStrings
+            object.material.color.set( 'green' )
+            globalScore = Number(data[0][1])
         }
+
 
         // do nothing if no user strings
         if ( data === undefined ) return
+
+        
 
         console.log( data )
         
@@ -102,10 +132,14 @@ function onClick( event ) {
         const table = document.createElement( 'table' )
         container.appendChild( table )
 
-        for ( let i = 0; i < data.length; i ++ ) {
+        const row = document.createElement( 'tr' )
+        row.innerHTML = `<td>Score</td><td>${globalScore}</td>`
+        table.appendChild( row )
+
+        for ( let i = 0; i < data.length-1; i ++ ) {
 
             const row = document.createElement( 'tr' )
-            row.innerHTML = `<td>${data[ i ][ 0 ]}</td><td>${data[ i ][ 1 ]}</td>`
+            row.innerHTML = `<td>${data[ i+1 ][ 0 ]}</td><td>${data[ i+1 ][ 1 ]}</td>`
             table.appendChild( row )
         }
 
@@ -116,7 +150,17 @@ function onClick( event ) {
 
 function animate() {
 
+    theCountX += 0.05
+    theCountY += 0.03
+
     requestAnimationFrame( animate )
+
+    scene.rotation.x += 0.015
+    scene.rotation.y += 0.015
+
+    camera.position.x = Math.sin(theCountX) * 50
+    camera.position.y = Math.sin(theCountY) * 50
+
     renderer.render( scene, camera )
 
 }
